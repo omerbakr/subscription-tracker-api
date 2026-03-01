@@ -33,10 +33,29 @@ export const sendReminders = serve(async (context) => {
     }
 
     if (dayjs().isSame(reminderDate, "day")) {
+      const freshSubscription = await fetchSubscription(
+        context,
+        subscriptionId,
+      );
+
+      if (!freshSubscription || freshSubscription.status !== "Active") {
+        console.log(
+          `Subscription ${subscriptionId} is no longer active. Stopping workflow.`,
+        );
+        return;
+      }
+
+      if (!freshSubscription.user || !freshSubscription.user.email) {
+        console.log(
+          `Subscription ${subscriptionId} has no valid contact details. Skipping reminder.`,
+        );
+        continue;
+      }
+
       await triggerReminder(
         context,
         `${daysBefore} days before reminder`,
-        subscription,
+        freshSubscription,
       );
     }
   }
